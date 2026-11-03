@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  test:
+    name: Test & Lint (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Create virtual environment and install dependencies
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          uv pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: .venv/bin/ruff check src tests
+
+      - name: Security scan with bandit
+        run: .venv/bin/bandit -r src
+
+      - name: Run test suite with pytest
+        run: .venv/bin/pytest --cov=lh_env_sanitizer --cov-report=term-missing tests/
+
+      - name: Self-audit with lh-env CLI
+        run: |
+          .venv/bin/lh-env audit . --format sarif --output audit-results.sarif || true
+
+      - name: Upload SARIF audit results
+        if: matrix.python-version == '3.12' && always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: audit-results.sarif
+        continue-on-error: true
+
