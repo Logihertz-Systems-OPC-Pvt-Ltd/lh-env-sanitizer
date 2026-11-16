@@ -1,0 +1,9 @@
+Package: lh-env-sanitizer
+Version: 0.1.0
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: Sameer Tawade <ops@logihertz.com>
+Homepage: https://www.logihertz.com
+Description: lh-env - Bivariate Shannon Entropy & Pattern Confidence Heuristic
+ High-entropy secret detector and configuration hygiene sanitizer scanning .env files, CI/CD variables, and application manifests for cleartext API keys, private keys, and insecure debug flags.
